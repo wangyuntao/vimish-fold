@@ -170,7 +170,7 @@ If BUFFER is NIL, current buffer is used."
                 (format " (%d lines)" (count-lines beg end)))))
     (save-excursion
       (goto-char beg)
-      (re-search-forward "^\\([[:blank:]]*\\).*$")
+      (re-search-forward "^\\([[:blank:]]+\\)")
       (concat (match-string-no-properties 1) "// ..." info))))
 
 (defun vimish-fold--setup-fringe (overlay &optional prefix)
