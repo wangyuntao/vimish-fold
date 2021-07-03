@@ -138,7 +138,7 @@ overhead is undesirable."
   (save-excursion
     (let ((n (count-lines beg end)))
       (goto-char end)
-      (if (eq end (line-beginning-position)) (+ n 1) n))))
+      (if (looking-at "^$") (+ n 1) n))))
 
 (defun vimish-fold--correct-region (beg end)
   "Return a cons of corrected BEG and END.
@@ -147,14 +147,10 @@ We only support folding by whole lines, so we should make sure
 that beginning and end positions are correct.  Also, sometimes
 users select region including last newline into it, they don't
 really want to include it, we correct this here."
-  (cl-destructuring-bind (beg . end)
-      (if (>= end beg)
-          (cons beg end)
-        (cons end beg))
+  (cl-destructuring-bind (beg . end) (if (>= end beg) (cons beg end) (cons end beg))
     (save-excursion
       (save-restriction
-        (let ((beg* (progn (goto-char beg)
-                           (line-beginning-position)))
+        (let ((beg* (progn (goto-char beg) (line-beginning-position)))
               (end* (progn (goto-char end)
 			   (if (eq end (line-beginning-position))
 			       (line-end-position 0) (line-end-position)))))
@@ -174,12 +170,18 @@ If ON is NIL, make the text editable again."
   "Extract folding header from region between BEG and END in BUFFER.
 
 If BUFFER is NIL, current buffer is used."
-  (let ((info (when vimish-fold-show-lines
-                (format " (%d lines)" (vimish-fold--count-lines beg end)))))
-    (save-excursion
-      (goto-char beg)
-      (re-search-forward "^\\([[:blank:]]+\\)")
-      (concat (match-string-no-properties 1) "// ..." info))))
+  (save-excursion
+    (goto-char beg)
+    (setq a nil)
+    (while (< (point) end)
+      (unless (looking-at "^$")
+	(re-search-forward "^\\([[:blank:]]*\\).*$")
+	(setq b (match-string-no-properties 1))
+	(when (or (eq a nil) (< (length b) (length a))) (setq a b)))
+      (forward-line))
+    (when (eq a nil) (setq a ""))
+    (concat a "// ..." (when vimish-fold-show-lines
+			 (format " (%d lines)" (vimish-fold--count-lines beg end))))))
 
 (defun vimish-fold--setup-fringe (overlay &optional prefix)
   "Setup fringe for OVERLAY according to user settings.
