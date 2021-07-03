@@ -133,6 +133,13 @@ overhead is undesirable."
 (defvar vimish-fold-unfolded-keymap (make-sparse-keymap)
   "Keymap which is active when point is placed on unfolded text.")
 
+(defun vimish-fold--count-lines (beg end)
+  "Return the number of lines"
+  (save-excursion
+    (let ((n (count-lines beg end)))
+      (goto-char end)
+      (if (eq end (line-beginning-position)) (+ n 1) n))))
+
 (defun vimish-fold--correct-region (beg end)
   "Return a cons of corrected BEG and END.
 
@@ -149,7 +156,8 @@ really want to include it, we correct this here."
         (let ((beg* (progn (goto-char beg)
                            (line-beginning-position)))
               (end* (progn (goto-char end)
-			   (if (eq end (line-beginning-position)) (line-end-position 0) (line-end-position)))))
+			   (if (eq end (line-beginning-position))
+			       (line-end-position 0) (line-end-position)))))
           (cons beg* end*))))))
 
 (defun vimish-fold--read-only (on beg end)
@@ -167,7 +175,7 @@ If ON is NIL, make the text editable again."
 
 If BUFFER is NIL, current buffer is used."
   (let ((info (when vimish-fold-show-lines
-                (format " (%d lines)" (count-lines beg end)))))
+                (format " (%d lines)" (vimish-fold--count-lines beg end)))))
     (save-excursion
       (goto-char beg)
       (re-search-forward "^\\([[:blank:]]+\\)")
@@ -211,7 +219,7 @@ This includes fringe bitmaps and faces."
   (interactive "r")
   (deactivate-mark)
   (cl-destructuring-bind (beg . end) (vimish-fold--correct-region beg end)
-    (when (< (count-lines beg end) 2)
+    (when (< (vimish-fold--count-lines beg end) 2)
       (error "Nothing to fold"))
     (dolist (overlay (overlays-in beg end))
       (when (vimish-fold--vimish-overlay-p overlay)
