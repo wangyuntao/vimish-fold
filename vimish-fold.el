@@ -153,24 +153,7 @@ really want to include it, we correct this here."
         (let ((beg* (progn (goto-char beg)
                            (line-beginning-position)))
               (end* (progn (goto-char end)
-                           (line-end-position))))
-          (when (or vimish-fold-include-last-empty-line
-                    (not (eq beg* end*)))
-            (narrow-to-region beg* end*)
-            (goto-char (point-min))
-            (let* ((empty-lines (reverse (cl-loop if (progn (goto-char (line-beginning-position)) (looking-at "$"))
-                                                  collect (line-number-at-pos)
-                                                  end
-                                                  until (progn (goto-char (line-end-position)) (eobp))
-                                                  do (forward-line 1))))
-                   (empty-lines-num (length empty-lines)))
-              (cl-case empty-lines-num
-                (0)
-                (1 (when (eq (line-number-at-pos (point-max)) (car empty-lines))
-                     (setq end* (1- end*))))
-                (t (when (and (eq (line-number-at-pos (point-max)) (car empty-lines))
-                              (> (- (car empty-lines) (cadr empty-lines)) 1))
-                     (setq end* (1- end*)))))))
+			   (if (eq end (line-beginning-position)) (line-end-position 0) (line-end-position)))))
           (cons beg* end*))))))
 
 (defun vimish-fold--read-only (on beg end)
@@ -191,19 +174,19 @@ If BUFFER is NIL, current buffer is used."
                 (format "    %d lines" (count-lines beg end)))))
     (save-excursion
       (goto-char beg)
-      (re-search-forward "^\\([[:blank:]]*.*\\)$")
+      (re-search-forward "^\\([[:blank:]]*\\).*$")
       (concat
        (truncate-string-to-width
         (if (and (>= (match-beginning 1) beg)
                  (<= (match-end 1)       end))
-            (match-string-no-properties 1)
+            (concat (match-string-no-properties 1) "...")
           vimish-fold-blank-fold-header)
         (- (or vimish-fold-header-width
                (window-width))
            (length info))
         nil
         32 ; space
-        "…")
+        )
        info))))
 
 (defun vimish-fold--setup-fringe (overlay &optional prefix)
