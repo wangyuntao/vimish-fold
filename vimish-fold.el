@@ -69,10 +69,6 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Basic functionality
 
-(defface vimish-fold-overlay
-  '((t (:inherit highlight)))
-  "Face used to highlight the fold overlay.")
-
 (defface vimish-fold-mouse-face
   '((t (:inherit highlight :weight bold)))
   "Face to use when mouse hovers over folded text.")
@@ -171,23 +167,11 @@ If ON is NIL, make the text editable again."
 
 If BUFFER is NIL, current buffer is used."
   (let ((info (when vimish-fold-show-lines
-                (format "    %d lines" (count-lines beg end)))))
+                (format " (%d lines)" (count-lines beg end)))))
     (save-excursion
       (goto-char beg)
       (re-search-forward "^\\([[:blank:]]*\\).*$")
-      (concat
-       (truncate-string-to-width
-        (if (and (>= (match-beginning 1) beg)
-                 (<= (match-end 1)       end))
-            (concat (match-string-no-properties 1) "...")
-          vimish-fold-blank-fold-header)
-        (- (or vimish-fold-header-width
-               (window-width))
-           (length info))
-        nil
-        32 ; space
-        )
-       info))))
+      (concat (match-string-no-properties 1) "// ..." info))))
 
 (defun vimish-fold--setup-fringe (overlay &optional prefix)
   "Setup fringe for OVERLAY according to user settings.
@@ -209,7 +193,7 @@ If PREFIX is not NIL, setup fringe for every line."
 
 This includes fringe bitmaps and faces."
   (overlay-put overlay 'display
-               (propertize header 'face 'vimish-fold-overlay))
+               (propertize header 'face 'font-lock-comment-face))
   (overlay-put overlay 'pointer 'hand)
   (overlay-put overlay 'mouse-face 'vimish-fold-mouse-face)
   (overlay-put overlay 'help-echo "Click to unfold the text")
